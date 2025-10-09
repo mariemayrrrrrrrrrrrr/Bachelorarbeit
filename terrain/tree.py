@@ -11,16 +11,16 @@ rules = {
 
 
 # -------- L-System Funktion --------
-def apply_lsystem(sentence, rules, iterations):
+def apply_lsystem(axiom, rules, iterations):
     for _ in range(iterations):
         next_sentence = ""
-        for char in sentence:
+        for char in axiom:
             if char in rules:
                 next_sentence += rules[char]
             else:
                 next_sentence += char
-        sentence = next_sentence
-    return sentence
+        axiom= next_sentence
+    return axiom
 
 # -------- Baum Geometrie --------
 vertices = []
@@ -29,11 +29,15 @@ radii = []
 leaves = []  # Blätter
 startPosition = (0, 0, 0)
 startAngle = np.array([0, 1, 0])
-treeHeight = 0.5
+treeHeight = 0.00005
 
 def create_tree(sentence, startPosition=(0,0,0), startAngle=np.array([0,1,0]), 
-                treeHeight=2, startRadius=0.2):
+                treeHeight=1, startRadius=0.1):
     stack = []
+    vertices = []
+    faces = []
+    radii = []
+    leaves = []
     currentPosition = np.array(startPosition)
     currentAngle = np.array(startAngle)
     currentRadius = startRadius
@@ -101,20 +105,10 @@ def create_tree(sentence, startPosition=(0,0,0), startAngle=np.array([0,1,0]),
                 leaves.append([float(currentPosition[0]), float(currentPosition[1]), float(currentPosition[2])])
             currentPosition, currentAngle, currentLength, currentRadius = stack.pop()
 
-# -------- Generierung --------
-lsystem_string = apply_lsystem(axiom, rules, 5)
-print("L-System String:", lsystem_string)
-create_tree(lsystem_string)     
+    return {
+        "vertices": vertices,
+        "faces": faces,
+        "radii": radii,
+        "leaves": leaves}
 
-# -------- JSON Export --------
-tree_data = {
-    "vertices": vertices,
-    "faces": faces,
-    "radii": radii,
-    "leaves": leaves
-}
 
-with open("tree.json", "w") as f:
-    json.dump(tree_data, f)
-
-print("✅ tree.json erzeugt – Stamm, Äste und Blätter oben am Baum vorhanden.")

@@ -79,64 +79,67 @@
       });
 
     // ---------------- Baum laden ----------------
-fetch('tree.json')
+// ---------------- Wald laden ----------------
+fetch('forest.json')
   .then(res => res.json())
-  .then(data => {
-    const vertices = data.vertices;
-    const faces = data.faces;
-    const radii = data.radii;
-    const leaves = data.leaves;
-
+  .then(forestData => {
     const branchMaterial = new THREE.MeshStandardMaterial({ color: 0x8b5a2b }); // braun
     const leafMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });   // grün
 
-    // --- Äste als Zylinder ---
-    for (let i = 0; i < faces.length; i++) {
-      const [a, b] = faces[i];
-      const v1 = new THREE.Vector3(...vertices[a]);
-      const v2 = new THREE.Vector3(...vertices[b]);
-    
-      const radiusTop = radii[a] || 0.05;
-      const radiusBottom = radii[b] || 0.05; 
+    // Durch alle Bäume im Wald gehen
+    forestData.forEach(tree => {
+      const vertices = tree.vertices;
+      const faces = tree.faces;
+      const radii = tree.radii;
+      const leaves = tree.leaves;
 
-      const cylHeight = v1.distanceTo(v2);
+      // --- Äste als Zylinder ---
+      for (let i = 0; i < faces.length; i++) {
+        const [a, b] = faces[i];
+        const v1 = new THREE.Vector3(...vertices[a]);
+        const v2 = new THREE.Vector3(...vertices[b]);
+      
+        const radiusTop = radii[a] || 0.05;
+        const radiusBottom = radii[b] || 0.05; 
 
-      // Zylinder an Ursprung erzeugen
+        const cylHeight = v1.distanceTo(v2);
+
+        // Zylinder an Ursprung erzeugen
       const geometry = new THREE.CylinderGeometry( radiusBottom, radiusTop, cylHeight, 6);
-      const cylinder = new THREE.Mesh(geometry, branchMaterial);
+        const cylinder = new THREE.Mesh(geometry, branchMaterial);
 
-      // Zylinder mittig zwischen v1 und v2 platzieren
-      const mid = new THREE.Vector3().addVectors(v1, v2).multiplyScalar(0.5);
-      cylinder.position.copy(mid);
+        // Zylinder mittig zwischen v1 und v2 platzieren
+        const mid = new THREE.Vector3().addVectors(v1, v2).multiplyScalar(0.5);
+        cylinder.position.copy(mid);
 
-      // Ausrichtung: Zylinder default Y-Achse → rotieren Richtung v2-v1
-      const dir = new THREE.Vector3().subVectors(v2, v1).normalize();
-      const axis = new THREE.Vector3(0, 1, 0).cross(dir).normalize();
-      const angle = Math.acos(new THREE.Vector3(0, 1, 0).dot(dir));
-      if (!isNaN(angle)) {
-        cylinder.quaternion.setFromAxisAngle(axis, angle);
+        // Ausrichtung: Zylinder default Y-Achse → rotieren Richtung v2-v1
+        const dir = new THREE.Vector3().subVectors(v2, v1).normalize();
+        const axis = new THREE.Vector3(0, 1, 0).cross(dir).normalize();
+        const angle = Math.acos(new THREE.Vector3(0, 1, 0).dot(dir));
+        if (!isNaN(angle)) {
+          cylinder.quaternion.setFromAxisAngle(axis, angle);
+        }
+
+        scene.add(cylinder);
       }
-
-      scene.add(cylinder);
-    }
 
     // --- Blätter als Kugeln --
     
-    for (let l of leaves) {
+      for (let l of leaves) {
   const geometry = new THREE.PlaneGeometry(0.6, 0.3); // Breite x Höhe
-  const leaf = new THREE.Mesh(geometry, leafMaterial);
-  leaf.position.set(l[0], l[1], l[2]);
+        const leaf = new THREE.Mesh(geometry, leafMaterial);
+        leaf.position.set(l[0], l[1], l[2]);
 
   // Zufällige Drehung, damit es nicht alle gleich ausgerichtet sind
-  leaf.rotation.x = Math.random() * Math.PI;
-  leaf.rotation.y = Math.random() * Math.PI;
-  leaf.rotation.z = Math.random() * Math.PI;
+        leaf.rotation.x = Math.random() * Math.PI;
+        leaf.rotation.y = Math.random() * Math.PI;
+        leaf.rotation.z = Math.random() * Math.PI;
 
-  scene.add(leaf);
-}
-
+        scene.add(leaf);
+      }
+    });
   });
-  
+
 
 
     // ---------------- Animation ----------------
