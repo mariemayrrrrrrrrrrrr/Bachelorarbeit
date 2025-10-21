@@ -4,24 +4,8 @@ import random
 with open('terrain.json', 'r') as f:
     terrain_data = json.load(f)
 
-vertices = terrain_data['vertices']
-faces = terrain_data['faces']
-colors = terrain_data['colors']
 
-print('Colors', colors[1])
-
-#-------- Startpunkte finden --------
-waldalle= []
-wald =[]
-
-for i in range (0,len(colors),10):
-    if colors[i] == [0, 0.4, 0.1]:
-        waldalle.append(vertices[i])
-    else:
-        continue
-
-for i in range (0,20):
-    wald.append(random.choice(waldalle))
+tree = terrain_data['tree']
 
 
 # --- Bäume generieren ---
@@ -31,7 +15,7 @@ rules = {
     "F": "F[+F][-F][&F][^F][<F][>F]L"
 }
 forest = []
-for position in wald:
+for position in tree:
     #iterations = random.randint(4,4)
     lsystem_string = apply_lsystem(axiom, rules, 4)
     array= ['lsystem_string', lsystem_string]

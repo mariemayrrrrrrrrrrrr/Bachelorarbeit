@@ -85,60 +85,74 @@ fetch('forest.json')
   .then(forestData => {
     const branchMaterial = new THREE.MeshStandardMaterial({ color: 0x8b5a2b }); // braun
     const leafMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });   // grün
+    const baseBranchGeometry = new THREE.CylinderGeometry(1, 1, 1, 6);
+    const baseLeafGeometry = new THREE.PlaneGeometry(0.6, 0.3);
 
-    // Durch alle Bäume im Wald gehen
-    forestData.forEach(tree => {
-      const vertices = tree.vertices;
-      const faces = tree.faces;
-      const radii = tree.radii;
-      const leaves = tree.leaves;
+ forestData.forEach(tree => {
+    const vertices = tree.vertices;
+    const faces = tree.faces;
+    const radii = tree.radii;
+    const leaves = tree.leaves;
 
-      // --- Äste als Zylinder ---
-      for (let i = 0; i < faces.length; i++) {
-        const [a, b] = faces[i];
-        const v1 = new THREE.Vector3(...vertices[a]);
-        const v2 = new THREE.Vector3(...vertices[b]);
+    const branchMesh = new THREE.InstancedMesh(baseBranchGeometry, branchMaterial, faces.length);
+    const leafMesh = new THREE.InstancedMesh(baseLeafGeometry, leafMaterial, leaves.length);
+
+    scene.add(branchMesh);
+    scene.add(leafMesh);
+
+    const dummy = new THREE.Object3D();
+
+
+    // --- Äste ---
+    for (let i = 0; i < faces.length; i++) {
+      dummy.position.set(0,0,0);
+      dummy.quaternion.identity();
+      dummy.scale.set(1,1,1);
+      const [a, b] = faces[i];
+      const v1 = new THREE.Vector3(...vertices[a]);
+      const v2 = new THREE.Vector3(...vertices[b]);
+
+      const radiusTop = radii[a] ;
+      const radiusBottom = radii[b] ;
+      const cylHeight = v1.distanceTo(v2);
+
+      const mid = new THREE.Vector3().addVectors(v1, v2).multiplyScalar(0.5);
+      dummy.position.copy(mid);
       
-        const radiusTop = radii[a] || 0.05;
-        const radiusBottom = radii[b] || 0.05; 
 
-        const cylHeight = v1.distanceTo(v2);
+      const dir = new THREE.Vector3().subVectors(v2, v1).normalize();
+      const axis = new THREE.Vector3(0, 1, 0).cross(dir).normalize();
+      const angle = Math.acos(new THREE.Vector3(0, 1, 0).dot(dir));
+      if (!isNaN(angle)) dummy.quaternion.setFromAxisAngle(axis, angle);
 
-        // Zylinder an Ursprung erzeugen
-      const geometry = new THREE.CylinderGeometry( radiusBottom, radiusTop, cylHeight, 6);
-        const cylinder = new THREE.Mesh(geometry, branchMaterial);
-
-        // Zylinder mittig zwischen v1 und v2 platzieren
-        const mid = new THREE.Vector3().addVectors(v1, v2).multiplyScalar(0.5);
-        cylinder.position.copy(mid);
-
-        // Ausrichtung: Zylinder default Y-Achse → rotieren Richtung v2-v1
-        const dir = new THREE.Vector3().subVectors(v2, v1).normalize();
-        const axis = new THREE.Vector3(0, 1, 0).cross(dir).normalize();
-        const angle = Math.acos(new THREE.Vector3(0, 1, 0).dot(dir));
-        if (!isNaN(angle)) {
-          cylinder.quaternion.setFromAxisAngle(axis, angle);
-        }
-
-        scene.add(cylinder);
-      }
-
-    // --- Blätter als Kugeln --
     
-      for (let l of leaves) {
-  const geometry = new THREE.PlaneGeometry(0.6, 0.3); // Breite x Höhe
-        const leaf = new THREE.Mesh(geometry, leafMaterial);
-        leaf.position.set(l[0], l[1], l[2]);
+      dummy.scale.set(radiusBottom, cylHeight, radiusTop);
+      dummy.updateMatrix();
+      branchMesh.setMatrixAt(i, dummy.matrix);
+    }
 
-  // Zufällige Drehung, damit es nicht alle gleich ausgerichtet sind
-        leaf.rotation.x = Math.random() * Math.PI;
-        leaf.rotation.y = Math.random() * Math.PI;
-        leaf.rotation.z = Math.random() * Math.PI;
+    // --- Blätter ---
+    for (let i = 0; i < leaves.length; i++) {
+      const l = leaves[i];
+      dummy.position.set(0,0,0);
+      dummy.quaternion.identity();
+      dummy.scale.set(1,1,1);
+      dummy.position.set(l[0], l[1], l[2]);
 
-        scene.add(leaf);
-      }
-    });
+      dummy.rotation.x = Math.random() * Math.PI;
+      dummy.rotation.y = Math.random() * Math.PI;
+      dummy.rotation.z = Math.random() * Math.PI;
+
+      dummy.updateMatrix();
+      leafMesh.setMatrixAt(i, dummy.matrix);
+    }
+
+    branchMesh.instanceMatrix.needsUpdate = true;
+    leafMesh.instanceMatrix.needsUpdate = true;
   });
+    });
+
+
 
 
 

@@ -27,17 +27,16 @@ vertices = []
 faces = []
 radii = []
 leaves = []  # Blätter
-startPosition = (0, 0, 0)
-startAngle = np.array([0, 1, 0])
-treeHeight = 0.00005
-
+#die starpositiion wenn nur ein baum -11.5, 34.031531936015156, 70.5
 def create_tree(sentence, startPosition=(0,0,0), startAngle=np.array([0,1,0]), 
                 treeHeight=1, startRadius=0.1):
     stack = []
+    #Auskommentieren wenn nur enen baum
     vertices = []
     faces = []
     radii = []
     leaves = []
+    #--------------------
     currentPosition = np.array(startPosition)
     currentAngle = np.array(startAngle)
     currentRadius = startRadius
@@ -112,3 +111,13 @@ def create_tree(sentence, startPosition=(0,0,0), startAngle=np.array([0,1,0]),
         "leaves": leaves}
 
 
+#------ Generiern --------
+#lsystem_string = apply_lsystem(axiom, rules, 4)
+#tree_data = create_tree(lsystem_string)
+# --- Gesamt-Export ---
+
+#with open("tree.json", "w") as f:
+#    json.dump(tree_data, f)
+    
+
+#print("✅ Baum erzeugt")

@@ -1,6 +1,7 @@
 import json
 import numpy as np
 from perlin_noise import octave_perlin
+import random
 
 # ---------------- Parameter ----------------
 MAP_SIZE = (300, 300)  # Breite x Höhe
@@ -91,11 +92,38 @@ for x in range(width - 1):
         faces.append([i, i + 1, i + height])
         faces.append([i + 1, i + height + 1, i + height])
 
+
+#---------------- Waldpunkte finden --------
+waldalle= []
+waldpunkte = []
+for i in range (0,len(colors)):
+    if colors[i] == [0, 0.4, 0.1]:
+        waldalle.append(vertices[i])
+    else:
+        continue
+for i in range (0,1000):
+    vx,vy,vz = random.choice(waldalle)
+    dx = random.uniform(-0.5, 0.5)
+    dy = random.uniform(-0.5, 0.5)
+    
+    # neue Position
+    nx = vx + dx
+    ny = vy + dy
+    
+    # Höhe neu bestimmen (nächster Terrainpunkt)
+    ix = int(round(nx + (width - 1) / 2))
+    iy = int(round(ny + (height - 1) / 2))
+    
+    if 0 <= ix < width and 0 <= iy < height:
+        nz = heightmap[ix][iy] * MAX_HEIGHT
+        waldpunkte.append([nx, ny, nz])
+
 # ---------------- JSON Export ----------------
 terrain_data = {
     'vertices': vertices,
     'faces': faces,
-    'colors': colors
+    'colors': colors,
+    'tree': waldpunkte
 }
 
 with open('terrain.json', 'w') as f:
