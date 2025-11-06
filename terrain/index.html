@@ -35,21 +35,19 @@
     document.body.appendChild(renderer.domElement);
 
     // Licht
-  scene.add(new THREE.AmbientLight(0xfff0d0, 0.4));
-
-   // Warmes Richtungslicht wie Sonnenuntergang
-  const dirLight = new THREE.DirectionalLight(0xffcc88, 0.9);
-  dirLight.position.set(80, 100, 80);
-  dirLight.castShadow = true;
-  dirLight.shadow.mapSize.width = 2048;
-  dirLight.shadow.mapSize.height = 2048;
-  dirLight.shadow.camera.near = 1;
-  dirLight.shadow.camera.far = 300;
-  scene.add(dirLight);
+    scene.add(new THREE.AmbientLight(0xfff0d0, 0.4));
+    const dirLight = new THREE.DirectionalLight(0xffcc88, 0.9);
+    dirLight.position.set(80, 100, 80);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.near = 1;
+    dirLight.shadow.camera.far = 300;
+    scene.add(dirLight);
 
     // Hemisphere Light für sanfte Himmel-/Bodenreflektion
-  const hemiLight = new THREE.HemisphereLight(0xffe0b0, 0x333333, 0.5);
-  scene.add(hemiLight);
+    const hemiLight = new THREE.HemisphereLight(0xffe0b0, 0x333333, 0.5);
+    scene.add(hemiLight);
 
     // Steuerung
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -249,66 +247,54 @@ fetch('forest.json')
   });
   const rain = new THREE.Points(rainGeometry, rainMaterial);
 
-  // Wolken
-  // Wolken-Gruppe
-const clouds = new THREE.Group();
-
-// Wolkenmaterial – weich, halbtransparent, leicht grau
-const cloudMaterial = new THREE.MeshPhongMaterial({
-  color: 0xb0b8c0,
-  transparent: true,
-  opacity: 0.4,
-  flatShading: true
-});
+  // ---------------- Wolken ----------------
+  const clouds = new THREE.Group();
+  const cloudMaterial = new THREE.MeshPhongMaterial({
+    color: 0xb0b8c0,
+    transparent: true,
+    opacity: 0.4,
+    flatShading: true
+  });
  
-// Erzeuge mehrere Wolken 25
-for (let i = 0; i < 100; i++) {
-  // jede Wolke ist eine Gruppe aus mehreren "Bällchen"
-  const cloud = new THREE.Group();
-  //Jede Wolke besteht aus 3-5 Kugeln
-  const numSpheres = 3 + Math.floor(Math.random() * 3);
+  // Erzeuge mehrere Wolken 25
+  for (let i = 0; i < 100; i++) {
+    // jede Wolke ist eine Gruppe aus mehreren "Bällchen"
+    const cloud = new THREE.Group();
+    //Jede Wolke besteht aus 3-5 Kugeln
+    const numSpheres = 3 + Math.floor(Math.random() * 3);
 
-  for (let j = 0; j < numSpheres; j++) {
-    const radius = 5 + Math.random() * 5;
-    const geometry = new THREE.SphereGeometry(radius, 16, 26);
-    const sphere = new THREE.Mesh(geometry, cloudMaterial);
+    for (let j = 0; j < numSpheres; j++) {
+      const radius = 5 + Math.random() * 5;
+      const geometry = new THREE.SphereGeometry(radius, 16, 26);
+      const sphere = new THREE.Mesh(geometry, cloudMaterial);
 
-    sphere.position.set(
-      (Math.random() - 0.5) * 10,
-      (Math.random() - 0.5) * 10,
-      (Math.random() - 0.5) * 10
+      sphere.position.set(
+        (Math.random() - 0.5) * 10,
+        (Math.random() - 0.5) * 10,
+        (Math.random() - 0.5) * 10
+      );
+      cloud.add(sphere);
+    }
+
+    // zufällige Position am Himmel
+    cloud.position.set(
+      Math.random() * terrainSize - terrainSize / 2, // x von -150 bis 150
+      80+ Math.random() * 10,               // y von 20 bis 120
+      Math.random() * terrainSize - terrainSize / 2  // z von -150 bis 150
     );
-    cloud.add(sphere);
+
+    const scale = 1 + Math.random() * 2;
+    cloud.scale.set(scale, scale, scale);
+
+    clouds.add(cloud);
   }
 
-  // zufällige Position am Himmel
-  cloud.position.set(
-    Math.random() * terrainSize - terrainSize / 2, // x von -150 bis 150
-    80+ Math.random() * 10,               // y von 20 bis 120
-    Math.random() * terrainSize - terrainSize / 2  // z von -150 bis 150
-  );
 
-  const scale = 1 + Math.random() * 2;
-  cloud.scale.set(scale, scale, scale);
+  // ---------------- Blitzlicht ----------------
+  //fehlt noch
 
-  clouds.add(cloud);
-}
-
-
-// Blitzlicht
-const ambientLight = new THREE.AmbientLight(0xaaaaaa, 0.2);
-scene.add(ambientLight);
-
-function flashLightning() {
-  if (Math.random() > 0.985) {
-    lightning.intensity = 6 + Math.random() * 6;
-    ambientLight.intensity = 0.6; // kurz heller
-    setTimeout(() => {
-      lightning.intensity = 0;
-      ambientLight.intensity = 0.2;
-    }, 150 + Math.random() * 200);
-  }
-}
+  //---------------- Tastendruck-Events ----------------
+  //Aktiviert Regen mit 'R' und deaktiviert ihn mit 'S'
   window.addEventListener('keydown', function(event){
     if(event.keyCode === 82){
       scene.add(rain);
@@ -330,31 +316,22 @@ function flashLightning() {
       scene.remove(rain);
       scene.remove(clouds);
       scene.add(particles);
-      // Hintergrund und Nebel
-    scene.background = new THREE.Color(0xffcfa0); // leicht rötlich-gelb
-    scene.fog = new THREE.Fog(0xffcfa0, 50, 300);
-
-    // Ambient Light für allgemeine Helligkeit
-    ambientLight.color.set(0xffd8b0); // wärmer
-    ambientLight.intensity = 0.35;    // etwas weniger stark
-
-    // Warmes Richtungslicht wie Sonnenuntergang
-    dirLight.color.set(0xffaa66); // rötlicher Ton
-    dirLight.intensity = 0.7;      // etwas schwächer
-    dirLight.position.set(60, 80, 60); // tieferer Sonnenstand
-    dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 2048;
-    dirLight.shadow.mapSize.height = 2048;
-    dirLight.shadow.camera.near = 1;
-    dirLight.shadow.camera.far = 300;
-
-    // Hemisphere Light für Himmel/Bodenreflektion
-    hemiLight.color.set(0xffcfa0);     // Himmelfarbe
-    hemiLight.groundColor.set(0x333333); // Boden etwas dunkler
-    hemiLight.intensity = 0.3;          // sanfter
-
-    // Optional: leichten Rotstich auf die Szene werfen
-    scene.background = new THREE.Color(0xffd1a4);
+      scene.background = new THREE.Color(0xffcfa0); 
+      scene.fog = new THREE.Fog(0xffcfa0, 50, 300);
+      ambientLight.color.set(0xffd8b0); 
+      ambientLight.intensity = 0.35;   
+      dirLight.color.set(0xffaa66); 
+      dirLight.intensity = 0.7;      
+      dirLight.position.set(60, 80, 60); 
+      dirLight.castShadow = true;
+      dirLight.shadow.mapSize.width = 2048;
+      dirLight.shadow.mapSize.height = 2048;
+      dirLight.shadow.camera.near = 1;
+      dirLight.shadow.camera.far = 300;
+      hemiLight.color.set(0xffcfa0);     
+      hemiLight.groundColor.set(0x333333); 
+      hemiLight.intensity = 0.3;          
+      scene.background = new THREE.Color(0xffd1a4);
     }
     
     
@@ -391,8 +368,6 @@ function flashLightning() {
        }
      }
     rain.geometry.attributes.position.needsUpdate = true;
-
-    flashLightning();
 
     renderer.render(scene, camera);
     }

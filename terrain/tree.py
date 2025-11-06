@@ -2,14 +2,6 @@ import numpy as np
 import json
 import random
 
-# -------- Variablen --------
-axiom = "S"
-rules = {
-    "S": "FFF[+F][-F][&F][^F][<F][>F]",   # Stamm wächst lang und verzweigt sich
-    "F": "F[+F][-F][&F][^F][<F][>F]L"     # Äste verzweigen sich und tragen Blätter am Ende
-}
-
-
 # -------- L-System Funktion --------
 def apply_lsystem(axiom, rules, iterations):
     for _ in range(iterations):
@@ -23,20 +15,15 @@ def apply_lsystem(axiom, rules, iterations):
     return axiom
 
 # -------- Baum Geometrie --------
-vertices = []
-faces = []
-radii = []
-leaves = []  # Blätter
-#die starpositiion wenn nur ein baum -11.5, 34.031531936015156, 70.5
-def create_tree(sentence, startPosition=(0,0,0), startAngle=np.array([0,1,0]), 
-                treeHeight=1, startRadius=0.1):
+
+def create_tree(sentence, startPosition=(0,0,0), startAngle=np.array([0,1,0]), treeHeight=1, startRadius=0.1):
+
     stack = []
-    #Auskommentieren wenn nur enen baum
     vertices = []
     faces = []
     radii = []
     leaves = []
-    #--------------------
+    
     currentPosition = np.array(startPosition)
     currentAngle = np.array(startAngle)
     currentRadius = startRadius
@@ -63,7 +50,7 @@ def create_tree(sentence, startPosition=(0,0,0), startAngle=np.array([0,1,0]),
                 currentLength *= random.uniform(0.6, 0.7)
                 currentRadius *= random.uniform(0.4, 0.5)
 
-        elif char in "+-<>^&":
+        elif char in "+-<>^&": # Drehungen
             angle_deg = 25
             if char in "->^&":
                 angle_deg *= -1
@@ -95,12 +82,12 @@ def create_tree(sentence, startPosition=(0,0,0), startAngle=np.array([0,1,0]),
             elif char in "^&":
                 currentAngle = Ry @ currentAngle    
 
-        elif char == "[":
+        elif char == "[": # Stack speichern
             stack.append((currentPosition.copy(), currentAngle.copy(), currentLength, currentRadius))
 
         elif char == "]":
             # Blatt nur an der Spitze des Astes
-            if currentRadius < 0.15:  # optional: nur dünne Enden
+            if currentRadius < 0.15:  
                 leaves.append([float(currentPosition[0]), float(currentPosition[1]), float(currentPosition[2])])
             currentPosition, currentAngle, currentLength, currentRadius = stack.pop()
 
@@ -110,14 +97,3 @@ def create_tree(sentence, startPosition=(0,0,0), startAngle=np.array([0,1,0]),
         "radii": radii,
         "leaves": leaves}
 
-
-#------ Generiern --------
-#lsystem_string = apply_lsystem(axiom, rules, 4)
-#tree_data = create_tree(lsystem_string)
-# --- Gesamt-Export ---
-
-#with open("tree.json", "w") as f:
-#    json.dump(tree_data, f)
-    
-
-#print("✅ Baum erzeugt")

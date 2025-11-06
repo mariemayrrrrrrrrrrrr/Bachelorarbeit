@@ -3,9 +3,7 @@ from tree import apply_lsystem, create_tree
 import random
 with open('terrain.json', 'r') as f:
     terrain_data = json.load(f)
-
-
-tree = terrain_data['tree']
+    tree = terrain_data['tree']
 
 
 # --- Bäume generieren ---
@@ -23,10 +21,11 @@ for position in tree:
     forest.append(tree_data)
     print('Baum', position)
 print('Anzahl Bäume', forest.__len__())
+
 # --- Gesamt-Export ---
 
 with open("forest.json", "w") as f:
     json.dump(forest, f)
 
-print("✅ forest.json erzeugt – mehrere Bäume im Gelände platziert.")
+print("forest.json erzeugt")
 

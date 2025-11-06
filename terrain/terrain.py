@@ -9,12 +9,11 @@ MAX_HEIGHT = 2.4       # Maximale Höhe des Terrains
 SCALE = 100.0           # Skalenfaktor für Perlin Noise (größer = glatter)
 EXPO = 1.1             # Höhenanpassung hebt Berge hervor
 COLORS = {
-    "water": [0.02, 0.15, 0.3],     # dunkleres Blau
-    "sand": [0.6, 0.55, 0.4],       # dunkleres, leicht bräunliches Sand
-    "grass": [0.1, 0.35, 0.1],      # dunkleres Grün
-    "forest": [0.03, 0.18, 0.07],   # dichter Wald, tiefgrün
-    "rock": [0.35, 0.32, 0.3],      # dunklerer Stein
-    "snow": [0.85, 0.87, 0.9]       # leicht gedämpftes Weiß  
+    "water": [0.02, 0.15, 0.3],     
+    "sand": [0.6, 0.55, 0.4],       
+    "grass": [0.1, 0.35, 0.1],      
+    "forest": [0.03, 0.18, 0.07],   
+    "rock": [0.35, 0.32, 0.3],       
 }
 
 # ---------------- Perlin Noise ----------------
@@ -108,7 +107,7 @@ for x in range(width):
         colors.append(color)
 
 #die Verbindungen zwischen diesen Punkten.
-#  sie sagen nur: „dieses Dreieck besteht aus Vertex A, Vertex B, Vertex C“.
+#sie sagen nur: „dieses Dreieck besteht aus Vertex A, Vertex B, Vertex C“.
 for x in range(width - 1):
     for y in range(height - 1):
         i = x * height + y
@@ -182,4 +181,4 @@ terrain_data = {
 with open('terrain.json', 'w') as f:
     json.dump(terrain_data, f)
 
-print("✅ terrain.json erzeugt, Terrain ist zentriert.")
+print("terrain.json erzeugt")
