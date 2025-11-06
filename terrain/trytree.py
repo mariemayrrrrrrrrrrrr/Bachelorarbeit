@@ -16,7 +16,7 @@ rules = {
 }
 forest = []
 for position in tree:
-    #iterations = random.randint(4,4)
+    #iterations = random.randint(4,7)
     lsystem_string = apply_lsystem(axiom, rules, 4)
     array= ['lsystem_string', lsystem_string]
     tree_data = create_tree(lsystem_string, startPosition=(position[0], position[2]*20, position[1]),)

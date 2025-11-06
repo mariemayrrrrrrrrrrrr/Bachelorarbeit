@@ -24,20 +24,32 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xaadfff);
+    scene.background = new THREE.Color(0xffd8aa);
+    scene.fog = new THREE.Fog(0xffd8aa, 50, 300);
 
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
-    camera.position.set(60, 120, 130);
+    camera.position.set(-17, 30, -85);
 
     const renderer = new THREE.WebGLRenderer({antialias: true});
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
     // Licht
-    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    dirLight.position.set(100,200,100);
-    scene.add(dirLight);
+  scene.add(new THREE.AmbientLight(0xfff0d0, 0.4));
+
+   // Warmes Richtungslicht wie Sonnenuntergang
+  const dirLight = new THREE.DirectionalLight(0xffcc88, 0.9);
+  dirLight.position.set(80, 100, 80);
+  dirLight.castShadow = true;
+  dirLight.shadow.mapSize.width = 2048;
+  dirLight.shadow.mapSize.height = 2048;
+  dirLight.shadow.camera.near = 1;
+  dirLight.shadow.camera.far = 300;
+  scene.add(dirLight);
+
+    // Hemisphere Light für sanfte Himmel-/Bodenreflektion
+  const hemiLight = new THREE.HemisphereLight(0xffe0b0, 0x333333, 0.5);
+  scene.add(hemiLight);
 
     // Steuerung
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -51,6 +63,7 @@
         const vertices = data.vertices;
         const faces = data.faces;
         const colors = data.colors;
+        const stone = data.rocks;
 
         const positions = [];
         for (let v of vertices) positions.push(v[0], v[2]*20, v[1]);
@@ -76,6 +89,22 @@
 
         const mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
+
+        // ---------------- Steine laden ----------------
+        const stoneGeometry = new THREE.DodecahedronGeometry(1, 0);
+        const stoneMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
+
+        stone.forEach(s => {
+          const x = s[0];
+          const y = s[1];
+          const z = s[2]*20;
+          const stone = new THREE.Mesh(stoneGeometry, stoneMaterial);
+          stone.position.set(x, z, y);
+          stone.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
+          const scale = Math.random() * 2 + 0.5;
+          stone.scale.set(scale, scale, scale);
+          scene.add(stone);
+        });
       });
 
     // ---------------- Baum laden ----------------
@@ -83,16 +112,27 @@
 fetch('forest.json')
   .then(res => res.json())
   .then(forestData => {
-    const branchMaterial = new THREE.MeshStandardMaterial({ color: 0x8b5a2b }); // braun
-    const leafMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });   // grün
     const baseBranchGeometry = new THREE.CylinderGeometry(1, 1, 1, 6);
     const baseLeafGeometry = new THREE.PlaneGeometry(0.6, 0.3);
+    const branchColors = [0x5c3a21, 0x8b5a2b, 0x7b4b2e, 0x6e5840];
+    const leafColors = [0x1e4d1e, 0x228B22, 0x7fbf3f, 0x556b2f];
 
  forestData.forEach(tree => {
     const vertices = tree.vertices;
     const faces = tree.faces;
     const radii = tree.radii;
     const leaves = tree.leaves;
+
+    // Zufällige Baumfarbe
+    const branchColor = branchColors[Math.floor(Math.random() * branchColors.length)];
+    const leafColor = leafColors[Math.floor(Math.random() * leafColors.length)];
+
+    const branchMaterial = new THREE.MeshStandardMaterial({ 
+        color: branchColor, roughness: 0.8 
+    });
+    const leafMaterial = new THREE.MeshStandardMaterial({ 
+        color: leafColor, roughness: 0.7, side: THREE.DoubleSide 
+    });
 
     const branchMesh = new THREE.InstancedMesh(baseBranchGeometry, branchMaterial, faces.length);
     const leafMesh = new THREE.InstancedMesh(baseLeafGeometry, leafMaterial, leaves.length);
@@ -151,15 +191,210 @@ fetch('forest.json')
     leafMesh.instanceMatrix.needsUpdate = true;
   });
     });
+  
+  // ---------------- Wasserfläche ----------------
+  const waterGeometry = new THREE.PlaneGeometry(200,200,200,200);
+  const waterMaterial = new THREE.MeshStandardMaterial({ color: 0x3b5f4a, roughness: 0.5, metalness: 0.3, transparent: true, opacity: 0.8 });
+  const water = new THREE.Mesh(waterGeometry, waterMaterial);
+  water.rotation.x = -Math.PI/2;
+  water.position.y = 12.15;
+  water.receiveShadow = true;
+  scene.add(water);
+
+  // ---------------- Partikel (Blätter/Pollen) ----------------
+  const particleCount = 8000;
+  const particlesGeometry = new THREE.BufferGeometry();
+  const positions = [];
+
+  const terrainSize = 200;  // Geländegröße
+  const Height = 100;    // maximale Höhe der Partikel
+
+  for (let i = 0; i < particleCount; i++) {
+    positions.push(
+    Math.random() * terrainSize - terrainSize / 2, // x: -150 bis 150
+    Math.random() * Height + 5,               // y: 5 bis 55
+    Math.random() * terrainSize - terrainSize / 2 // z: -150 bis 150
+   );
+  }
+  particlesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions,3));
+
+  const particlesMaterial = new THREE.PointsMaterial({
+    color: 0xffd88c,
+    size: 0.2,
+    transparent: true,
+    opacity: 0.7
+  });
+
+  const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+  scene.add(particles);
+
+  // ---------------Regen ----------------
+  const rainCount = 200000;
+  const rainGeometry = new THREE.BufferGeometry();
+  let rainPositions = [];
+  
+  for (let i = 0; i < rainCount; i++) {
+    rainPositions.push(
+      Math.random() * terrainSize - terrainSize / 2, // x von -150 bis 150
+      Math.random() * 150,               // y von 20 bis 120
+      Math.random() * terrainSize - terrainSize / 2  // z von -150 bis 150
+    );
+  }
+  rainGeometry.setAttribute('position', new THREE.Float32BufferAttribute(rainPositions, 3));
+  const rainMaterial = new THREE.PointsMaterial({
+    color: 0x336699,
+    size: 0.15,
+    transparent: true,
+    opacity: 0.8,
+  });
+  const rain = new THREE.Points(rainGeometry, rainMaterial);
+
+  // Wolken
+  // Wolken-Gruppe
+const clouds = new THREE.Group();
+
+// Wolkenmaterial – weich, halbtransparent, leicht grau
+const cloudMaterial = new THREE.MeshPhongMaterial({
+  color: 0xb0b8c0,
+  transparent: true,
+  opacity: 0.4,
+  flatShading: true
+});
+ 
+// Erzeuge mehrere Wolken 25
+for (let i = 0; i < 100; i++) {
+  // jede Wolke ist eine Gruppe aus mehreren "Bällchen"
+  const cloud = new THREE.Group();
+  //Jede Wolke besteht aus 3-5 Kugeln
+  const numSpheres = 3 + Math.floor(Math.random() * 3);
+
+  for (let j = 0; j < numSpheres; j++) {
+    const radius = 5 + Math.random() * 5;
+    const geometry = new THREE.SphereGeometry(radius, 16, 26);
+    const sphere = new THREE.Mesh(geometry, cloudMaterial);
+
+    sphere.position.set(
+      (Math.random() - 0.5) * 10,
+      (Math.random() - 0.5) * 10,
+      (Math.random() - 0.5) * 10
+    );
+    cloud.add(sphere);
+  }
+
+  // zufällige Position am Himmel
+  cloud.position.set(
+    Math.random() * terrainSize - terrainSize / 2, // x von -150 bis 150
+    80+ Math.random() * 10,               // y von 20 bis 120
+    Math.random() * terrainSize - terrainSize / 2  // z von -150 bis 150
+  );
+
+  const scale = 1 + Math.random() * 2;
+  cloud.scale.set(scale, scale, scale);
+
+  clouds.add(cloud);
+}
 
 
+// Blitzlicht
+const ambientLight = new THREE.AmbientLight(0xaaaaaa, 0.2);
+scene.add(ambientLight);
 
+function flashLightning() {
+  if (Math.random() > 0.985) {
+    lightning.intensity = 6 + Math.random() * 6;
+    ambientLight.intensity = 0.6; // kurz heller
+    setTimeout(() => {
+      lightning.intensity = 0;
+      ambientLight.intensity = 0.2;
+    }, 150 + Math.random() * 200);
+  }
+}
+  window.addEventListener('keydown', function(event){
+    if(event.keyCode === 82){
+      scene.add(rain);
+      scene.add(clouds);
+      scene.add(ambientLight);
+      scene.remove(particles)
+      scene.background = new THREE.Color(0x0d0f13);
+      scene.fog = new THREE.Fog(0x0d0f13, 30, 250);
+      ambientLight.color.set(0x1a1a1a);
+      ambientLight.intensity = 0.15;
+      dirLight.color.set(0x9bb4ff);
+      dirLight.intensity = 0.25;
+      dirLight.position.set(50, 120, 50);
+      hemiLight.color.set(0x445566);
+      hemiLight.groundColor.set(0x0a0a0a);
+      hemiLight.intensity = 0.2;
+    }
+    if(event.keyCode === 83){
+      scene.remove(rain);
+      scene.remove(clouds);
+      scene.add(particles);
+      // Hintergrund und Nebel
+    scene.background = new THREE.Color(0xffcfa0); // leicht rötlich-gelb
+    scene.fog = new THREE.Fog(0xffcfa0, 50, 300);
 
+    // Ambient Light für allgemeine Helligkeit
+    ambientLight.color.set(0xffd8b0); // wärmer
+    ambientLight.intensity = 0.35;    // etwas weniger stark
+
+    // Warmes Richtungslicht wie Sonnenuntergang
+    dirLight.color.set(0xffaa66); // rötlicher Ton
+    dirLight.intensity = 0.7;      // etwas schwächer
+    dirLight.position.set(60, 80, 60); // tieferer Sonnenstand
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.near = 1;
+    dirLight.shadow.camera.far = 300;
+
+    // Hemisphere Light für Himmel/Bodenreflektion
+    hemiLight.color.set(0xffcfa0);     // Himmelfarbe
+    hemiLight.groundColor.set(0x333333); // Boden etwas dunkler
+    hemiLight.intensity = 0.3;          // sanfter
+
+    // Optional: leichten Rotstich auf die Szene werfen
+    scene.background = new THREE.Color(0xffd1a4);
+    }
+    
+    
+  });
 
     // ---------------- Animation ----------------
     function animate() {
       requestAnimationFrame(animate);
-      renderer.render(scene, camera);
+      
+      // Wasser animieren
+      const waterVertices = water.geometry.attributes.position.array;
+      for(let i=2;i<waterVertices.length;i+=3){
+         waterVertices[i] = Math.sin(Date.now()*0.001 + waterVertices[i-2] + waterVertices[i-1])*0.2;
+      }
+      water.geometry.attributes.position.needsUpdate = true;
+        
+      // Partikel bewegen
+      const pos = particles.geometry.attributes.position.array;
+      for(let i=1;i<pos.length;i+=3){
+       pos[i] += Math.sin(Date.now()*0.001 + pos[i])*0.01;
+       if(pos[i]>30) pos[i]=0;
+     }
+     particles.geometry.attributes.position.needsUpdate = true;
+
+     //Regen
+     const rainPos = rain.geometry.attributes.position.array;
+     for (let i = 1; i < rainPos.length; i += 3) {
+       rainPos[i] -= 1.5; // Fallgeschwindigkeit
+
+       if (rainPos[i] < 0) {
+         rainPos[i] = 150 + Math.random() * 20; // neue Höhe
+         rainPos[i - 2] = Math.random() * 200 - 100; // neue X-Position
+         rainPos[i + 1] = Math.random() * 200 - 100; // neue Z-Position
+       }
+     }
+    rain.geometry.attributes.position.needsUpdate = true;
+
+    flashLightning();
+
+    renderer.render(scene, camera);
     }
     animate();
 
