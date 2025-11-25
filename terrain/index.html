@@ -22,6 +22,8 @@
   <script type="module">
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { Water } from 'three/addons/objects/Water.js';
+    import { Sky } from 'three/addons/objects/Sky.js';
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xffd8aa);
@@ -92,18 +94,23 @@
         // ---------------- Steine laden ----------------
         const stoneGeometry = new THREE.DodecahedronGeometry(1, 0);
         const stoneMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
+        const stoneCount = stone.length;
+        const stoneMesh = new THREE.InstancedMesh(stoneGeometry, stoneMaterial, stoneCount);
+        scene.add(stoneMesh);
+        const dummy = new THREE.Object3D();
 
         stone.forEach(s => {
           const x = s[0];
           const y = s[1];
           const z = s[2]*20;
-          const stone = new THREE.Mesh(stoneGeometry, stoneMaterial);
-          stone.position.set(x, z, y);
-          stone.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
+          dummy.position.set(x, z, y);
+          dummy.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
           const scale = Math.random() * 2 + 0.5;
-          stone.scale.set(scale, scale, scale);
-          scene.add(stone);
+          dummy.scale.set(scale, scale, scale);
+          dummy.updateMatrix();
+          stoneMesh.setMatrixAt(stone.indexOf(s), dummy.matrix);
         });
+        stoneMesh.instanceMatrix.needsUpdate = true;
       });
 
     // ---------------- Baum laden ----------------
@@ -192,19 +199,34 @@ fetch('forest.json')
     });
   
   // ---------------- Wasserfläche ----------------
-  const waterGeometry = new THREE.PlaneGeometry(200,200,200,200);
-  const waterMaterial = new THREE.MeshStandardMaterial({ color: 0x3b5f4a, roughness: 0.5, metalness: 0.3, transparent: true, opacity: 0.8 });
-  const water = new THREE.Mesh(waterGeometry, waterMaterial);
-  water.rotation.x = -Math.PI/2;
-  water.position.y = 12.15;
-  water.receiveShadow = true;
-  scene.add(water);
+  // Plane-Geometrie für das Wasser (Größe wie vorher)
+const waterGeometry = new THREE.PlaneGeometry(200, 200);
+
+// Water-Objekt erzeugen
+const water = new Water(waterGeometry, {
+    textureWidth: 512,
+    textureHeight: 512,
+    waterNormals: new THREE.TextureLoader().load(
+        'https://threejs.org/examples/textures/waternormals.jpg',
+        function(texture){
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+        }
+    ),
+    sunDirection: dirLight.position.clone().normalize(), // Lichtquelle
+    sunColor:  0xdde6d5,
+    waterColor: 0x0f2619,
+    distortionScale: 1.4,
+    fog: scene.fog !== undefined
+});
+
+water.rotation.x = -Math.PI / 2;  // Horizontal ausrichten
+water.position.y = 12;        // Position wie vorher
+scene.add(water);
 
   // ---------------- Partikel (Blätter/Pollen) ----------------
   const particleCount = 8000;
   const particlesGeometry = new THREE.BufferGeometry();
   const positions = [];
-
   const terrainSize = 200;  // Geländegröße
   const Height = 100;    // maximale Höhe der Partikel
 
@@ -249,57 +271,69 @@ fetch('forest.json')
   const rain = new THREE.Points(rainGeometry, rainMaterial);
 
   // ---------------- Wolken ----------------
-  const clouds = new THREE.Group();
+  // ---------------- Wolken mit InstancedMesh ----------------
   const cloudMaterial = new THREE.MeshPhongMaterial({
     color: 0xb0b8c0,
     transparent: true,
     opacity: 0.4,
     flatShading: true
   });
- 
-  // Erzeuge mehrere Wolken 25
-  for (let i = 0; i < 100; i++) {
-    // jede Wolke ist eine Gruppe aus mehreren "Bällchen"
-    const cloud = new THREE.Group();
-    //Jede Wolke besteht aus 3-5 Kugeln
-    const numSpheres = 3 + Math.floor(Math.random() * 3);
+  const baseSphereGeometry = new THREE.SphereGeometry(1, 16, 16);
+
+  // Berechne die Gesamtanzahl der Kugeln (100 Wolken, 3-5 Kugeln pro Wolke)
+  const cloudsCount = 100;
+  let totalSpheres = 0;
+  const spheresPerCloud = [];
+  for (let i = 0; i < cloudsCount; i++) {
+    const num = 3 + Math.floor(Math.random() * 3);
+    spheresPerCloud.push(num);
+    totalSpheres += num;
+ }
+
+  const cloudMesh = new THREE.InstancedMesh(baseSphereGeometry, cloudMaterial, totalSpheres);
+
+
+  const dummy = new THREE.Object3D();
+  let sphereIndex = 0;
+
+  for (let i = 0; i < cloudsCount; i++) {
+    const numSpheres = spheresPerCloud[i];
+
+    // zufällige Position der Wolke
+    const cloudX = Math.random() * terrainSize - terrainSize / 2;
+    const cloudY = 80 + Math.random() * 10;
+    const cloudZ = Math.random() * terrainSize - terrainSize / 2;
+    const cloudScale = 1 + Math.random() * 2;
 
     for (let j = 0; j < numSpheres; j++) {
       const radius = 5 + Math.random() * 5;
-      const geometry = new THREE.SphereGeometry(radius, 16, 26);
-      const sphere = new THREE.Mesh(geometry, cloudMaterial);
+    
+      // Position innerhalb der Wolke
+      const offsetX = (Math.random() - 0.5) * 10;
+      const offsetY = (Math.random() - 0.5) * 10;
+      const offsetZ = (Math.random() - 0.5) * 10;
 
-      sphere.position.set(
-        (Math.random() - 0.5) * 10,
-        (Math.random() - 0.5) * 10,
-        (Math.random() - 0.5) * 10
-      );
-      cloud.add(sphere);
+      dummy.position.set(cloudX + offsetX, cloudY + offsetY, cloudZ + offsetZ);
+      dummy.scale.set(radius * cloudScale, radius * cloudScale, radius * cloudScale);
+      dummy.updateMatrix();
+      cloudMesh.setMatrixAt(sphereIndex, dummy.matrix);
+      sphereIndex++;
     }
-
-    // zufällige Position am Himmel
-    cloud.position.set(
-      Math.random() * terrainSize - terrainSize / 2, // x von -150 bis 150
-      80+ Math.random() * 10,               // y von 20 bis 120
-      Math.random() * terrainSize - terrainSize / 2  // z von -150 bis 150
-    );
-
-    const scale = 1 + Math.random() * 2;
-    cloud.scale.set(scale, scale, scale);
-
-    clouds.add(cloud);
   }
+
+  cloudMesh.instanceMatrix.needsUpdate = true;
+
+
 
 
   // ---------------- Blitzlicht ----------------
   //fehlt noch
-
   //---------------- Tastendruck-Events ----------------
   //Aktiviert Regen mit 'R' und deaktiviert ihn mit 'S'
   window.addEventListener('keydown', function(event){
     if(event.keyCode === 82){
       scene.add(rain);
-      scene.add(clouds);
+      scene.add(cloudMesh);
       scene.add(ambientLight);
       scene.remove(particles)
       scene.background = new THREE.Color(0x1a1a2b);
@@ -312,10 +346,15 @@ fetch('forest.json')
       hemiLight.color.set(0x556677);
       hemiLight.groundColor.set(0x111111);
       hemiLight.intensity = 0.5;
+      // Wasser dunkler und mehr reflektierend machen
+  water.material.uniforms['waterColor'].value.set(0x0a2233);  // dunkles Blau-Grün
+  water.material.uniforms['sunDirection'].value.copy(dirLight.position).normalize();
+  water.material.uniforms['distortionScale'].value = 2.5;    // stärkerer Wellen-Effekt
+  water.material.needsUpdate = true;
     }
     if(event.keyCode === 83){
       scene.remove(rain);
-      scene.remove(clouds);
+      scene.remove(cloudMesh);
       scene.add(particles);
       scene.background = new THREE.Color(0xffcfa0); 
       scene.fog = new THREE.Fog(0xffcfa0, 50, 300);
@@ -338,16 +377,15 @@ fetch('forest.json')
     
   });
 
+  
+
     // ---------------- Animation ----------------
     function animate() {
       requestAnimationFrame(animate);
       
       // Wasser animieren
-      const waterVertices = water.geometry.attributes.position.array;
-      for(let i=2;i<waterVertices.length;i+=3){
-         waterVertices[i] = Math.sin(Date.now()*0.001 + waterVertices[i-2] + waterVertices[i-1])*0.2;
-      }
-      water.geometry.attributes.position.needsUpdate = true;
+      water.material.uniforms['time'].value += 0.05 / 60.0;
+
         
       // Partikel bewegen
       const pos = particles.geometry.attributes.position.array;
