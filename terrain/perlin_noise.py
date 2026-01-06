@@ -44,11 +44,11 @@ def lerp(a, b, x):
 
 def perlin(x,y):
     
-    # Find unit cube that contains point.
+    # Einheitswürfel finden
     xi=int(x) & 255                 
     yi=int(y) & 255                  
 
-    # Find Distancvector
+    # Distanzvektor finden
     xf = x - int(x)
     yf = y - int(y)
 

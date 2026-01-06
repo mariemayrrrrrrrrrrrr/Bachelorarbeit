@@ -5,14 +5,14 @@ with open('terrain.json', 'r') as f:
     terrain_data = json.load(f)
     tree = terrain_data['tree']
 
-
 # --- Bäume generieren ---
 axiom = "S"
 rules = {
     "S": "FFF[+F][-F][&F][^F][<F][>F]",
-    "F": "F[+F][-F][&F][^F][<F][>F]L"
+    "F": "F[+F][-F][&F][^F][<F][>F]"
 }
 forest = []
+
 for position in tree:
     #iterations = random.randint(4,7)
     lsystem_string = apply_lsystem(axiom, rules, 4)
@@ -23,7 +23,6 @@ for position in tree:
 print('Anzahl Bäume', forest.__len__())
 
 # --- Gesamt-Export ---
-
 with open("forest.json", "w") as f:
     json.dump(forest, f)
 

@@ -15,7 +15,6 @@ def apply_lsystem(axiom, rules, iterations):
     return axiom
 
 # -------- Baum Geometrie --------
-
 def create_tree(sentence, startPosition=(0,0,0), startAngle=np.array([0,1,0]), treeHeight=1, startRadius=0.1):
 
     stack = []

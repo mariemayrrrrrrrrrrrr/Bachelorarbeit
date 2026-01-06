@@ -57,6 +57,10 @@
     controls.target.set(0, 0, 0);
     controls.update();
 
+    // Textur für Regentropfen
+    const textureLoader = new THREE.TextureLoader();
+    const circleTexture = textureLoader.load('circle.png');
+  
     // ---------------- Terrain laden ----------------
     fetch('terrain.json')
       .then(res => res.json())
@@ -199,35 +203,34 @@ fetch('forest.json')
     });
   
   // ---------------- Wasserfläche ----------------
-  // Plane-Geometrie für das Wasser (Größe wie vorher)
-const waterGeometry = new THREE.PlaneGeometry(200, 200);
+  const waterGeometry = new THREE.PlaneGeometry(200, 200);
 
-// Water-Objekt erzeugen
-const water = new Water(waterGeometry, {
-    textureWidth: 512,
-    textureHeight: 512,
-    waterNormals: new THREE.TextureLoader().load(
-        'https://threejs.org/examples/textures/waternormals.jpg',
-        function(texture){
-            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-        }
-    ),
-    sunDirection: dirLight.position.clone().normalize(), // Lichtquelle
-    sunColor:  0xdde6d5,
-    waterColor: 0x0f2619,
-    distortionScale: 1.4,
-    fog: scene.fog !== undefined
-});
+  // Water-Objekt erzeugen
+  const water = new Water(waterGeometry, {
+      textureWidth: 512,
+      textureHeight: 512,
+      waterNormals: new THREE.TextureLoader().load(
+          'https://threejs.org/examples/textures/waternormals.jpg',
+           function(texture){
+           texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+          }
+      ),
+      sunDirection: dirLight.position.clone().normalize(), // Lichtquelle
+      sunColor:  0xdde6d5,
+      waterColor: 0x0f2619,
+      distortionScale: 1.4,
+      fog: scene.fog !== undefined
+  });
 
-water.rotation.x = -Math.PI / 2;  // Horizontal ausrichten
-water.position.y = 12;        // Position wie vorher
-scene.add(water);
+  water.rotation.x = -Math.PI / 2;  
+  water.position.y = 12;        
+  scene.add(water);
 
-  // ---------------- Partikel (Blätter/Pollen) ----------------
+  // ---------------- Partikel ----------------
   const particleCount = 8000;
   const particlesGeometry = new THREE.BufferGeometry();
   const positions = [];
-  const terrainSize = 200;  // Geländegröße
+  const terrainSize = 200;  
   const Height = 100;    // maximale Höhe der Partikel
 
   for (let i = 0; i < particleCount; i++) {
@@ -267,11 +270,12 @@ scene.add(water);
     size: 0.15,
     transparent: true,
     opacity: 0.8,
+    map: circleTexture,
+    alphaTest: 0.5,
   });
   const rain = new THREE.Points(rainGeometry, rainMaterial);
 
   // ---------------- Wolken ----------------
-  // ---------------- Wolken mit InstancedMesh ----------------
   const cloudMaterial = new THREE.MeshPhongMaterial({
     color: 0xb0b8c0,
     transparent: true,
@@ -280,7 +284,6 @@ scene.add(water);
   });
   const baseSphereGeometry = new THREE.SphereGeometry(1, 16, 16);
 
-  // Berechne die Gesamtanzahl der Kugeln (100 Wolken, 3-5 Kugeln pro Wolke)
   const cloudsCount = 100;
   let totalSpheres = 0;
   const spheresPerCloud = [];
@@ -291,14 +294,12 @@ scene.add(water);
  }
 
   const cloudMesh = new THREE.InstancedMesh(baseSphereGeometry, cloudMaterial, totalSpheres);
-
-
+  
   const dummy = new THREE.Object3D();
   let sphereIndex = 0;
 
   for (let i = 0; i < cloudsCount; i++) {
     const numSpheres = spheresPerCloud[i];
-
     // zufällige Position der Wolke
     const cloudX = Math.random() * terrainSize - terrainSize / 2;
     const cloudY = 80 + Math.random() * 10;
@@ -307,7 +308,6 @@ scene.add(water);
 
     for (let j = 0; j < numSpheres; j++) {
       const radius = 5 + Math.random() * 5;
-    
       // Position innerhalb der Wolke
       const offsetX = (Math.random() - 0.5) * 10;
       const offsetY = (Math.random() - 0.5) * 10;
@@ -320,14 +320,8 @@ scene.add(water);
       sphereIndex++;
     }
   }
-
   cloudMesh.instanceMatrix.needsUpdate = true;
 
-
-
-
-  // ---------------- Blitzlicht ----------------
-  //fehlt noch
   //---------------- Tastendruck-Events ----------------
   //Aktiviert Regen mit 'R' und deaktiviert ihn mit 'S'
   window.addEventListener('keydown', function(event){
@@ -336,21 +330,20 @@ scene.add(water);
       scene.add(cloudMesh);
       scene.add(ambientLight);
       scene.remove(particles)
-      scene.background = new THREE.Color(0x1a1a2b);
-      scene.fog = new THREE.Fog(0x1a1a2b, 30, 250);
-      ambientLight.color.set(0x444466);
-      ambientLight.intensity = 0.4;
-      dirLight.color.set(0x99bbff);
-      dirLight.intensity = 0.8;
+      scene.background = new THREE.Color(0x1a1f33); 
+      scene.fog = new THREE.Fog(0x1a1f33, 25, 220);
+      ambientLight.color.set(0x555577);
+      ambientLight.intensity = 0.35;
+      dirLight.color.set(0x99aaff);   
+      dirLight.intensity = 0.7;
       dirLight.position.set(50, 120, 50);
-      hemiLight.color.set(0x556677);
-      hemiLight.groundColor.set(0x111111);
-      hemiLight.intensity = 0.5;
-      // Wasser dunkler und mehr reflektierend machen
-  water.material.uniforms['waterColor'].value.set(0x0a2233);  // dunkles Blau-Grün
-  water.material.uniforms['sunDirection'].value.copy(dirLight.position).normalize();
-  water.material.uniforms['distortionScale'].value = 2.5;    // stärkerer Wellen-Effekt
-  water.material.needsUpdate = true;
+      hemiLight.color.set(0x667788);
+      hemiLight.groundColor.set(0x222222);
+      hemiLight.intensity = 0.45;
+      water.material.uniforms['waterColor'].value.set(0x05316a);  
+      water.material.uniforms['distortionScale'].value = 2.5;    
+      water.material.uniforms['reflectivity'].value = 0.6;       
+      water.material.needsUpdate = true;
     }
     if(event.keyCode === 83){
       scene.remove(rain);
@@ -372,12 +365,11 @@ scene.add(water);
       hemiLight.groundColor.set(0x333333); 
       hemiLight.intensity = 0.3;          
       scene.background = new THREE.Color(0xffd1a4);
-    }
-    
-    
+      water.material.uniforms['waterColor'].value.set(0x0f2619);  
+      water.material.uniforms['distortionScale'].value = 1.4;         
+      water.material.needsUpdate = true;
+    } 
   });
-
-  
 
     // ---------------- Animation ----------------
     function animate() {
@@ -386,7 +378,6 @@ scene.add(water);
       // Wasser animieren
       water.material.uniforms['time'].value += 0.05 / 60.0;
 
-        
       // Partikel bewegen
       const pos = particles.geometry.attributes.position.array;
       for(let i=1;i<pos.length;i+=3){
