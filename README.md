@@ -2,8 +2,8 @@
 
 ## Bedienung der Szene
 
-- **R-Taste**: Aktiviert das Gewitter. Es erscheinen Regen, Wolken und Blitzlicht, die Szene wird dunkel.  
-- **S-Taste**: Schaltet wieder auf Sonne zurück. Regen und Blitz verschwinden, Partikel werden sichtbar, und die Szene erhält wieder warmes Sonnenlicht.
+- **R-Taste**: Aktiviert das Unwetter. Es erscheinen Regen und Wolken. 
+- **S-Taste**: Schaltet wieder auf Sonne zurück. 
 
 ## Generieren der Daten
 
