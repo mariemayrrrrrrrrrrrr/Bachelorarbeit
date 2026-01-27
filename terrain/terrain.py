@@ -121,7 +121,7 @@ waldalle= []
 waldpunkte = []
 for i in range (0,len(vertices)):
     h = heightmap[i // height, i % height]
-    if 0.25 < h < 1.0:
+    if 0.25 < h < 0.7:
         prob = 100 * np.exp(-((h - 0.35)**2) / (2 * 0.07**2))
         if random.random()*100 < prob:
             waldalle.append(vertices[i])
